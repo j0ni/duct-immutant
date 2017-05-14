@@ -1,0 +1,38 @@
+version: 2.0
+jobs:
+  build:
+    docker:
+      - image: clojure:alpine
+
+    environment:
+      TEST_REPORTS: /tmp/test-reports
+
+    working_directory: ~/duct-immutant
+
+    steps:
+      - checkout
+
+      - run:
+          name: Dependencies
+          command: lein deps
+
+      - restore_cache:
+          keys:
+            - v1-duct-immutant-{{ checksum "project.clj" }}
+            - v1-duct-immutant-
+
+      - run:
+          name: Tests
+          command: |
+            mkdir -p ${TEST_REPORTS}
+            lein test2junit
+            cp target/test2junit/*.xml ${TEST_REPORTS}
+
+      - save_cache:
+          key: v1-duct-immutant-{{ checksum "project.clj" }}
+          paths:
+            - ~/.m2
+
+      - store_test_results:
+          path: /tmp/test-reports
+      
